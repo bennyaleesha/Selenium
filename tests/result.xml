@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="18" time="132.397" timestamp="2024-08-12T15:48:39.745575" hostname="Aleeshas-MacBook-Air.local"><testcase classname="test_homePage.TestHomePage" name="test_homepage_load" time="12.287"><failure message="selenium.common.exceptions.NoSuchElementException: Message: no such element: Unable to locate element: {&quot;method&quot;:&quot;xpath&quot;,&quot;selector&quot;:&quot;//div[@class='sc-cfda7d4b-0 fUeOuH']&quot;}&#10;  (Session info: chrome=127.0.6533.100); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception&#10;Stacktrace:&#10;0   chromedriver                        0x0000000100e350b8 cxxbridge1$str$ptr + 1887276&#10;1   chromedriver                        0x0000000100e2d794 cxxbridge1$str$ptr + 1856264&#10;2   chromedriver                        0x0000000100a3c82c cxxbridge1$string$len + 88524&#10;3   chromedriver                        0x0000000100a80834 cxxbridge1$string$len + 367060&#10;4   chromedriver                        0x0000000100ab848c cxxbridge1$string$len + 595500&#10;5   chromedriver                        0x0000000100a75474 cxxbridge1$string$len + 321044&#10;6   chromedriver                        0x0000000100a760e4 cxxbridge1$string$len + 324228&#10;7   chromedriver                        0x0000000100dfca9c cxxbridge1$str$ptr + 1656336&#10;8   chromedriver                        0x0000000100e014f8 cxxbridge1$str$ptr + 1675372&#10;9   chromedriver                        0x0000000100de2980 cxxbridge1$str$ptr + 1549556&#10;10  chromedriver                        0x0000000100e01ca8 cxxbridge1$str$ptr + 1677340&#10;11  chromedriver                        0x0000000100dd4690 cxxbridge1$str$ptr + 1491460&#10;12  chromedriver                        0x0000000100e1eaf0 cxxbridge1$str$ptr + 1795684&#10;13  chromedriver                        0x0000000100e1ec6c cxxbridge1$str$ptr + 1796064&#10;14  chromedriver                        0x0000000100e2d3c8 cxxbridge1$str$ptr + 1855292&#10;15  libsystem_pthread.dylib             0x0000000195f3ffa8 _pthread_start + 148&#10;16  libsystem_pthread.dylib             0x0000000195f3ada0 thread_start + 8">self = &lt;tests.test_homePage.TestHomePage object at 0x1060a4620&gt;
+
+    @pytest.mark.smoke
+    def test_homepage_load(self):
+        """
+        Test to ensure the home page loads correctly with the expected title and header.
+        """
+        log = self.getLogger()
+        homePage = HomePage(self.driver)
+    
+        log.info("Verifying the page title")
+        assert HomePageData.homePageTitle in self.driver.title, "-E- Title is not as expected"
+    
+        log.info("Locating and verifying the header presence")
+&gt;       header = homePage.locate_header()
+
+test_homePage.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../pageObjects/HomePage.py:39: in locate_header
+    return self.driver.find_element(*HomePage.header_tag)
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/selenium/webdriver/remote/webdriver.py:748: in find_element
+    return self.execute(Command.FIND_ELEMENT, {"using": by, "value": value})["value"]
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/selenium/webdriver/remote/webdriver.py:354: in execute
+    self.error_handler.check_response(response)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x1067377d0&gt;
+response = {'status': 404, 'value': '{"value":{"error":"no such element","message":"no such element: Unable to locate element: {\...000195f3ffa8 _pthread_start + 148\\n16  libsystem_pthread.dylib             0x0000000195f3ada0 thread_start + 8\\n"}}'}
+
+    def check_response(self, response: Dict[str, Any]) -&gt; None:
+        """Checks that a JSON response from the WebDriver does not have an
+        error.
+    
+        :Args:
+         - response - The JSON response from the WebDriver server as a dictionary
+           object.
+    
+        :Raises: If the response contains an error message.
+        """
+        status = response.get("status", None)
+        if not status or status == ErrorCode.SUCCESS:
+            return
+        value = None
+        message = response.get("message", "")
+        screen: str = response.get("screen", "")
+        stacktrace = None
+        if isinstance(status, int):
+            value_json = response.get("value", None)
+            if value_json and isinstance(value_json, str):
+                import json
+    
+                try:
+                    value = json.loads(value_json)
+                    if len(value) == 1:
+                        value = value["value"]
+                    status = value.get("error", None)
+                    if not status:
+                        status = value.get("status", ErrorCode.UNKNOWN_ERROR)
+                        message = value.get("value") or value.get("message")
+                        if not isinstance(message, str):
+                            value = message
+                            message = message.get("message")
+                    else:
+                        message = value.get("message", None)
+                except ValueError:
+                    pass
+    
+        exception_class: Type[WebDriverException]
+        e = ErrorCode()
+        error_codes = [item for item in dir(e) if not item.startswith("__")]
+        for error_code in error_codes:
+            error_info = getattr(ErrorCode, error_code)
+            if isinstance(error_info, list) and status in error_info:
+                exception_class = getattr(ExceptionMapping, error_code, WebDriverException)
+                break
+        else:
+            exception_class = WebDriverException
+    
+        if not value:
+            value = response["value"]
+        if isinstance(value, str):
+            raise exception_class(value)
+        if message == "" and "message" in value:
+            message = value["message"]
+    
+        screen = None  # type: ignore[assignment]
+        if "screen" in value:
+            screen = value["screen"]
+    
+        stacktrace = None
+        st_value = value.get("stackTrace") or value.get("stacktrace")
+        if st_value:
+            if isinstance(st_value, str):
+                stacktrace = st_value.split("\n")
+            else:
+                stacktrace = []
+                try:
+                    for frame in st_value:
+                        line = frame.get("lineNumber", "")
+                        file = frame.get("fileName", "&lt;anonymous&gt;")
+                        if line:
+                            file = f"{file}:{line}"
+                        meth = frame.get("methodName", "&lt;anonymous&gt;")
+                        if "className" in frame:
+                            meth = f"{frame['className']}.{meth}"
+                        msg = "    at %s (%s)"
+                        msg = msg % (meth, file)
+                        stacktrace.append(msg)
+                except TypeError:
+                    pass
+        if exception_class == UnexpectedAlertPresentException:
+            alert_text = None
+            if "data" in value:
+                alert_text = value["data"].get("text")
+            elif "alert" in value:
+                alert_text = value["alert"].get("text")
+            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here
+&gt;       raise exception_class(message, screen, stacktrace)
+E       selenium.common.exceptions.NoSuchElementException: Message: no such element: Unable to locate element: {"method":"xpath","selector":"//div[@class='sc-cfda7d4b-0 fUeOuH']"}
+E         (Session info: chrome=127.0.6533.100); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+E       Stacktrace:
+E       0   chromedriver                        0x0000000100e350b8 cxxbridge1$str$ptr + 1887276
+E       1   chromedriver                        0x0000000100e2d794 cxxbridge1$str$ptr + 1856264
+E       2   chromedriver                        0x0000000100a3c82c cxxbridge1$string$len + 88524
+E       3   chromedriver                        0x0000000100a80834 cxxbridge1$string$len + 367060
+E       4   chromedriver                        0x0000000100ab848c cxxbridge1$string$len + 595500
+E       5   chromedriver                        0x0000000100a75474 cxxbridge1$string$len + 321044
+E       6   chromedriver                        0x0000000100a760e4 cxxbridge1$string$len + 324228
+E       7   chromedriver                        0x0000000100dfca9c cxxbridge1$str$ptr + 1656336
+E       8   chromedriver                        0x0000000100e014f8 cxxbridge1$str$ptr + 1675372
+E       9   chromedriver                        0x0000000100de2980 cxxbridge1$str$ptr + 1549556
+E       10  chromedriver                        0x0000000100e01ca8 cxxbridge1$str$ptr + 1677340
+E       11  chromedriver                        0x0000000100dd4690 cxxbridge1$str$ptr + 1491460
+E       12  chromedriver                        0x0000000100e1eaf0 cxxbridge1$str$ptr + 1795684
+E       13  chromedriver                        0x0000000100e1ec6c cxxbridge1$str$ptr + 1796064
+E       14  chromedriver                        0x0000000100e2d3c8 cxxbridge1$str$ptr + 1855292
+E       15  libsystem_pthread.dylib             0x0000000195f3ffa8 _pthread_start + 148
+E       16  libsystem_pthread.dylib             0x0000000195f3ada0 thread_start + 8
+
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/selenium/webdriver/remote/errorhandler.py:229: NoSuchElementException</failure></testcase><testcase classname="test_homePage.TestHomePage" name="test_search_button" time="2.281" /><testcase classname="test_homePage.TestHomePage" name="test_nav_items" time="0.025" /><testcase classname="test_homePage.TestHomePage" name="test_category_options" time="9.173"><failure message="selenium.common.exceptions.NoSuchElementException: Message: no such element: Unable to locate element: {&quot;method&quot;:&quot;xpath&quot;,&quot;selector&quot;:&quot;(//span[text()='Back to School'])[2]&quot;}&#10;  (Session info: chrome=127.0.6533.100); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception&#10;Stacktrace:&#10;0   chromedriver                        0x0000000100e350b8 cxxbridge1$str$ptr + 1887276&#10;1   chromedriver                        0x0000000100e2d794 cxxbridge1$str$ptr + 1856264&#10;2   chromedriver                        0x0000000100a3c82c cxxbridge1$string$len + 88524&#10;3   chromedriver                        0x0000000100a80834 cxxbridge1$string$len + 367060&#10;4   chromedriver                        0x0000000100a76e38 cxxbridge1$string$len + 327640&#10;5   chromedriver                        0x0000000100ab848c cxxbridge1$string$len + 595500&#10;6   chromedriver                        0x0000000100a75474 cxxbridge1$string$len + 321044&#10;7   chromedriver                        0x0000000100a760e4 cxxbridge1$string$len + 324228&#10;8   chromedriver                        0x0000000100dfca9c cxxbridge1$str$ptr + 1656336&#10;9   chromedriver                        0x0000000100e014f8 cxxbridge1$str$ptr + 1675372&#10;10  chromedriver                        0x0000000100de2980 cxxbridge1$str$ptr + 1549556&#10;11  chromedriver                        0x0000000100e01ca8 cxxbridge1$str$ptr + 1677340&#10;12  chromedriver                        0x0000000100dd4690 cxxbridge1$str$ptr + 1491460&#10;13  chromedriver                        0x0000000100e1eaf0 cxxbridge1$str$ptr + 1795684&#10;14  chromedriver                        0x0000000100e1ec6c cxxbridge1$str$ptr + 1796064&#10;15  chromedriver                        0x0000000100e2d3c8 cxxbridge1$str$ptr + 1855292&#10;16  libsystem_pthread.dylib             0x0000000195f3ffa8 _pthread_start + 148&#10;17  libsystem_pthread.dylib             0x0000000195f3ada0 thread_start + 8">self = &lt;tests.test_homePage.TestHomePage object at 0x106735a30&gt;
+
+    def test_category_options(self):
+        """
+        Test to validate if a desired category can be selected from the category dropdown.
+        """
+        log = self.getLogger()
+        homePage = HomePage(self.driver)
+    
+        log.info("Navigating to the category dropdown")
+        homePage.locate_home_icon().click()
+        time.sleep(2)
+    
+        log.info("Selecting the category dropdown")
+        homePage.locate_category().click()
+        time.sleep(2)
+    
+        log.info("Selecting the 'Back to School' option from the dropdown")
+&gt;       homePage.get_school_option().click()
+
+test_homePage.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../pageObjects/HomePage.py:91: in get_school_option
+    school_options = category_overlay.find_element(*HomePage.school_locator)
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/selenium/webdriver/remote/webelement.py:417: in find_element
+    return self._execute(Command.FIND_CHILD_ELEMENT, {"using": by, "value": value})["value"]
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/selenium/webdriver/remote/webelement.py:395: in _execute
+    return self._parent.execute(command, params)
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/selenium/webdriver/remote/webdriver.py:354: in execute
+    self.error_handler.check_response(response)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x1067377d0&gt;
+response = {'status': 404, 'value': '{"value":{"error":"no such element","message":"no such element: Unable to locate element: {\...000195f3ffa8 _pthread_start + 148\\n17  libsystem_pthread.dylib             0x0000000195f3ada0 thread_start + 8\\n"}}'}
+
+    def check_response(self, response: Dict[str, Any]) -&gt; None:
+        """Checks that a JSON response from the WebDriver does not have an
+        error.
+    
+        :Args:
+         - response - The JSON response from the WebDriver server as a dictionary
+           object.
+    
+        :Raises: If the response contains an error message.
+        """
+        status = response.get("status", None)
+        if not status or status == ErrorCode.SUCCESS:
+            return
+        value = None
+        message = response.get("message", "")
+        screen: str = response.get("screen", "")
+        stacktrace = None
+        if isinstance(status, int):
+            value_json = response.get("value", None)
+            if value_json and isinstance(value_json, str):
+                import json
+    
+                try:
+                    value = json.loads(value_json)
+                    if len(value) == 1:
+                        value = value["value"]
+                    status = value.get("error", None)
+                    if not status:
+                        status = value.get("status", ErrorCode.UNKNOWN_ERROR)
+                        message = value.get("value") or value.get("message")
+                        if not isinstance(message, str):
+                            value = message
+                            message = message.get("message")
+                    else:
+                        message = value.get("message", None)
+                except ValueError:
+                    pass
+    
+        exception_class: Type[WebDriverException]
+        e = ErrorCode()
+        error_codes = [item for item in dir(e) if not item.startswith("__")]
+        for error_code in error_codes:
+            error_info = getattr(ErrorCode, error_code)
+            if isinstance(error_info, list) and status in error_info:
+                exception_class = getattr(ExceptionMapping, error_code, WebDriverException)
+                break
+        else:
+            exception_class = WebDriverException
+    
+        if not value:
+            value = response["value"]
+        if isinstance(value, str):
+            raise exception_class(value)
+        if message == "" and "message" in value:
+            message = value["message"]
+    
+        screen = None  # type: ignore[assignment]
+        if "screen" in value:
+            screen = value["screen"]
+    
+        stacktrace = None
+        st_value = value.get("stackTrace") or value.get("stacktrace")
+        if st_value:
+            if isinstance(st_value, str):
+                stacktrace = st_value.split("\n")
+            else:
+                stacktrace = []
+                try:
+                    for frame in st_value:
+                        line = frame.get("lineNumber", "")
+                        file = frame.get("fileName", "&lt;anonymous&gt;")
+                        if line:
+                            file = f"{file}:{line}"
+                        meth = frame.get("methodName", "&lt;anonymous&gt;")
+                        if "className" in frame:
+                            meth = f"{frame['className']}.{meth}"
+                        msg = "    at %s (%s)"
+                        msg = msg % (meth, file)
+                        stacktrace.append(msg)
+                except TypeError:
+                    pass
+        if exception_class == UnexpectedAlertPresentException:
+            alert_text = None
+            if "data" in value:
+                alert_text = value["data"].get("text")
+            elif "alert" in value:
+                alert_text = value["alert"].get("text")
+            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here
+&gt;       raise exception_class(message, screen, stacktrace)
+E       selenium.common.exceptions.NoSuchElementException: Message: no such element: Unable to locate element: {"method":"xpath","selector":"(//span[text()='Back to School'])[2]"}
+E         (Session info: chrome=127.0.6533.100); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+E       Stacktrace:
+E       0   chromedriver                        0x0000000100e350b8 cxxbridge1$str$ptr + 1887276
+E       1   chromedriver                        0x0000000100e2d794 cxxbridge1$str$ptr + 1856264
+E       2   chromedriver                        0x0000000100a3c82c cxxbridge1$string$len + 88524
+E       3   chromedriver                        0x0000000100a80834 cxxbridge1$string$len + 367060
+E       4   chromedriver                        0x0000000100a76e38 cxxbridge1$string$len + 327640
+E       5   chromedriver                        0x0000000100ab848c cxxbridge1$string$len + 595500
+E       6   chromedriver                        0x0000000100a75474 cxxbridge1$string$len + 321044
+E       7   chromedriver                        0x0000000100a760e4 cxxbridge1$string$len + 324228
+E       8   chromedriver                        0x0000000100dfca9c cxxbridge1$str$ptr + 1656336
+E       9   chromedriver                        0x0000000100e014f8 cxxbridge1$str$ptr + 1675372
+E       10  chromedriver                        0x0000000100de2980 cxxbridge1$str$ptr + 1549556
+E       11  chromedriver                        0x0000000100e01ca8 cxxbridge1$str$ptr + 1677340
+E       12  chromedriver                        0x0000000100dd4690 cxxbridge1$str$ptr + 1491460
+E       13  chromedriver                        0x0000000100e1eaf0 cxxbridge1$str$ptr + 1795684
+E       14  chromedriver                        0x0000000100e1ec6c cxxbridge1$str$ptr + 1796064
+E       15  chromedriver                        0x0000000100e2d3c8 cxxbridge1$str$ptr + 1855292
+E       16  libsystem_pthread.dylib             0x0000000195f3ffa8 _pthread_start + 148
+E       17  libsystem_pthread.dylib             0x0000000195f3ada0 thread_start + 8
+
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/selenium/webdriver/remote/errorhandler.py:229: NoSuchElementException</failure></testcase><testcase classname="test_homePage.TestHomePage" name="test_signin_button" time="5.380" /><testcase classname="test_shopPage.TestShopPage" name="test_initial_cart_status" time="10.102" /><testcase classname="test_shopPage.TestShopPage" name="test_adding_to_cart" time="17.061" /><testcase classname="test_shopPage.TestShopPage" name="test_remove_cart_item" time="15.872" /><testcase classname="test_signinPage.TestSigninPage" name="test_no_input_signin" time="9.650" /><testcase classname="test_signinPage.TestSigninPage" name="test_only_password" time="0.112" /><testcase classname="test_signinPage.TestSigninPage" name="test_invalid_username[get_data0]" time="6.402" /><testcase classname="test_signinPage.TestSigninPage" name="test_invalid_username[get_data1]" time="6.477" /><testcase classname="test_signinPage.TestSigninPage" name="test_invalid_username[get_data2]" time="6.572" /><testcase classname="test_signinPage.TestSigninPage" name="test_invalid_username[get_data3]" time="6.404" /><testcase classname="test_signinPage.TestSigninPage" name="test_invalid_username[get_data4]" time="6.408" /><testcase classname="test_signinPage.TestSigninPage" name="test_password_masked" time="0.047" /><testcase classname="test_signinPage.TestSigninPage" name="test_hide_button" time="6.855" /><testcase classname="test_signinPage.TestSigninPage" name="test_valid_signin" time="10.645" /></testsuite></testsuites>
